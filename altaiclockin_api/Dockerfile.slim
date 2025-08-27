@@ -1,0 +1,31 @@
+# Use slim image (smaller than base but more compatible than alpine)
+FROM python:3.12-slim
+
+# Install only the minimum necessary
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    firefox-esr \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+WORKDIR /app
+
+# Copy and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY altaiclockin.py .
+COPY app.py .
+
+# Environment variables for headless mode
+ENV DISPLAY=:99
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Create startup script
+RUN echo '#!/bin/bash\nXvfb :99 -screen 0 1024x768x24 &\nsleep 2\nexec uvicorn app:app --host 0.0.0.0 --port 8990' > /app/start.sh && \
+    chmod +x /app/start.sh
+
+EXPOSE 8990
+CMD ["/app/start.sh"]

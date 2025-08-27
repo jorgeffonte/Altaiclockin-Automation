@@ -1,0 +1,14 @@
+# Altaiclockin Automation Script Requirements
+# ==========================================
+# 
+# For standalone execution (without Docker):
+# pip install -r requirements.txt
+#
+# For Docker/API execution:
+# See altaiclockin_api/requirements.txt
+
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# Optional: For better logging and debugging
+colorlog>=6.7.0

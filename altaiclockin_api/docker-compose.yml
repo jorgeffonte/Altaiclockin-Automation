@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  altaiclockin:
+    image: altaiclockin-api-slim:latest
+    container_name: altaiclockin-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8990}:8990"
+    environment:
+      - DISPLAY=:99
+      - TZ=${TZ:-Europe/Madrid}
+      - ALTAICLOCKIN_USERNAME=${ALTAICLOCKIN_USERNAME:-user}
+      - ALTAICLOCKIN_PASSWORD=${ALTAICLOCKIN_PASSWORD:-password}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8990/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: ${MEMORY_LIMIT:-512M}
+          cpus: ${CPU_LIMIT:-0.5}
+    networks:
+      - altaiclockin-net
+    # Optional: if you want persistent logs
+    # volumes:
+    #   - ./logs:/app/logs
+    # labels:
+    #   - "traefik.enable=false"  # If you are using Traefik
+    #   - "com.docker.compose.project=altaiclockin"
+
+networks:
+  altaiclockin-net:
+    driver: bridge

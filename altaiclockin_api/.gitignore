@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+.cache/
+
+# Logs
+*.log
+*.log.*
+
+# Selenium/Firefox/Chrome temp files
+selenium-screenshot-*.png
+geckodriver.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python virtualenv
+venv/
+.env/
+
+# Docker
+*.pid
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+
+# Do not include credentials or personal configurations
+*.secret
+*.bak
+
+# Others
+*.sqlite3
+
+# Do not include temporary test files
+*.tmp
+*.test
+
+# Tars
+*.tar

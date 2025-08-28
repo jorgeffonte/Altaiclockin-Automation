@@ -113,13 +113,14 @@ Always execute these scenarios after making changes:
 ## Build Times and Timeout Guidelines
 
 ### CRITICAL TIMING INFORMATION - NEVER CANCEL BUILDS
-- **Dependencies install**: ~30 seconds - Set timeout to 5+ minutes
+- **Dependencies install**: ~30 seconds fresh install, ~1-2 seconds if cached - Set timeout to 5+ minutes
 - **Docker build**: 2-5 minutes typical - **NEVER CANCEL** - Set timeout to 10+ minutes  
 - **Selenium automation**: 30-60 seconds per operation - Set timeout to 3+ minutes
 - **API startup**: 10-20 seconds - Set timeout to 2+ minutes
 
 ### Known Limitations
 - **Docker build may fail** in sandboxed environments due to SSL certificate issues
+- **pip install may fail** in restrictive environments due to network timeouts - document as "pip install fails due to network restrictions"
 - **Selenium requires Firefox** - automation will fail without Firefox browser
 - **Real credentials needed** for full functionality testing
 - **No automated test suite** exists - validation must be manual
@@ -188,6 +189,9 @@ Install Firefox: `apt-get install firefox-esr` or equivalent for your system
 
 ### "SSL certificate verification failed" during Docker build
 This is a known limitation in some environments. Document as: "Docker build not supported in this environment due to SSL certificate restrictions"
+
+### "pip install fails with ReadTimeoutError or SSL errors"
+This occurs in restrictive network environments. Document as: "pip install fails due to network restrictions - use pre-installed dependencies or different environment"
 
 ### "Connection refused" errors when testing API
 Ensure Docker container is running: `docker compose ps` and check logs: `docker compose logs -f`

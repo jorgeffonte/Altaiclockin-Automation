@@ -5,18 +5,19 @@ Automates clock-in and clock-out on https://app.altaiclockin.com/ using Selenium
 ## 📁 Project Structure
 
 ```
-altaiclockin_loger/
+Altaiclockin-Automation/
 ├── altaiclockin.py      # Standalone script for manual execution
 ├── requirements.txt     # Dependencies for standalone version
 ├── README.md           # This file
 └── altaiclockin_api/   # Docker API service
     ├── .env            # Environment configuration
+    ├── .gitignore      # Git ignore rules for API directory
     ├── app.py          # FastAPI API
     ├── altaiclockin.py # Selenium script (API version)
-    ├── docker-compose.yml
-    ├── Dockerfile.slim
-    ├── requirements.txt
-    ├── install-altaiclockin.sh
+    ├── docker-compose.yml # Docker Compose configuration
+    ├── Dockerfile.slim # Optimized Docker image definition
+    ├── requirements.txt # Dependencies for API version
+    ├── install-altaiclockin.sh # Installation script for Proxmox LXC
     └── README.md       # Detailed Docker documentation
 ```
 

@@ -9,6 +9,7 @@ import os
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import WebDriverException, ElementClickInterceptedException
 
 # --- CONFIGURATION ---
 URL = "https://app.altaiclockin.com/"
@@ -25,6 +26,62 @@ def human_sleep(a, b):
     delay = random.uniform(a, b)
     logging.debug(f"sleeping {delay:.2f}s")
     time.sleep(delay)
+
+def safe_click_element(driver, element, element_name, max_retries=3):
+    """
+    Safely click an element with retry logic and fallback to JavaScript click.
+    
+    This function handles the 'Failed to decode response from marionette' error
+    by implementing:
+    1. Retry logic with exponential backoff
+    2. JavaScript click as fallback
+    3. Better error handling
+    
+    Args:
+        driver: Selenium WebDriver instance
+        element: WebElement to click
+        element_name: Human-readable name for logging
+        max_retries: Maximum number of retry attempts
+        
+    Raises:
+        Exception: If all retry attempts fail
+    """
+    for attempt in range(max_retries):
+        try:
+            # Ensure element is in view and ready
+            driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
+            time.sleep(0.3)  # Brief pause after scroll
+            
+            # Try standard click
+            element.click()
+            logging.info(f"Successfully clicked {element_name}")
+            return
+            
+        except (WebDriverException, ElementClickInterceptedException) as e:
+            error_msg = str(e)
+            
+            # Check if it's the marionette decode error or click intercepted
+            if "Failed to decode response from marionette" in error_msg or "ElementClickInterceptedException" in error_msg:
+                logging.warning(f"Attempt {attempt + 1}/{max_retries} failed for {element_name}: {error_msg[:100]}")
+                
+                if attempt < max_retries - 1:
+                    # Exponential backoff: 0.5s, 1s, 2s
+                    wait_time = 0.5 * (2 ** attempt)
+                    logging.info(f"Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    # Last attempt: try JavaScript click
+                    logging.warning(f"Standard click failed after {max_retries} attempts, trying JavaScript click...")
+                    try:
+                        driver.execute_script("arguments[0].click();", element)
+                        logging.info(f"Successfully clicked {element_name} using JavaScript")
+                        return
+                    except Exception as js_error:
+                        logging.error(f"JavaScript click also failed: {js_error}")
+                        raise Exception(f"Failed to click {element_name} after all retry attempts") from e
+            else:
+                # Different error, re-raise immediately
+                raise
 
 def main():
     # Validate that credentials are configured
@@ -71,7 +128,8 @@ def main():
         human_sleep(0.3, 0.8)
 
         logging.info("Clicking 'Login' button")
-        driver.find_element(By.ID, "btnLogin").click()
+        login_button = driver.find_element(By.ID, "btnLogin")
+        safe_click_element(driver, login_button, "login button")
 
         human_sleep(2.0, 4.0)
 
@@ -83,7 +141,7 @@ def main():
 
         human_sleep(0.8, 2.0)
         logging.info("Clicking action button")
-        button.click()
+        safe_click_element(driver, button, f"{action} button")
         human_sleep(2.0, 4.0)
 
     except Exception as e:

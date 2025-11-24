@@ -9,6 +9,8 @@ import os
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException, ElementClickInterceptedException
 
 # --- CONFIGURATION ---
@@ -102,15 +104,22 @@ def main():
     try:
         options = Options()
         options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        
         logging.info("Launching Firefox...")
         driver = webdriver.Firefox(options=options)
+        driver.set_window_size(1920, 1080)
+        
+        wait = WebDriverWait(driver, 10)
 
         logging.info(f"Navigating to {URL}")
         driver.get(URL)
         human_sleep(1.5, 3.0)
 
-        logging.info("Trying to find login fields...")
-        user_input = driver.find_element(By.ID, "txLoginUsuario")
+        logging.info("Looking for login fields...")
+        user_input = wait.until(EC.presence_of_element_located((By.ID, "txLoginUsuario")))
         pass_input = driver.find_element(By.ID, "txLoginContrasena")
 
         logging.info("Entering username")
@@ -135,14 +144,17 @@ def main():
 
         logging.info("Looking for action button")
         if action == "checkin":
-            button = driver.find_element(By.ID, "cpContenidoCentral_lnkbtnGeneralInicio")
+            logging.info("Looking for clock-in button")
+            button = wait.until(EC.element_to_be_clickable((By.ID, "cpContenidoCentral_lnkbtnGeneralInicio")))
         else:
-            button = driver.find_element(By.ID, "cpContenidoCentral_lnkbtnGeneralFin")
+            logging.info("Looking for clock-out button")
+            button = wait.until(EC.element_to_be_clickable((By.ID, "cpContenidoCentral_lnkbtnGeneralFin")))
 
-        human_sleep(0.8, 2.0)
         logging.info("Clicking action button")
         safe_click_element(driver, button, f"{action} button")
         human_sleep(2.0, 4.0)
+        
+        logging.info(f"Action '{action}' completed successfully!")
 
     except Exception as e:
         logging.exception(f"An error occurred: {e}")

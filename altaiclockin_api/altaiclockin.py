@@ -128,10 +128,6 @@ def safe_click_element(driver, element, element_name, max_retries=3):
                 raise
 
 def main():
-    # Validate that credentials are configured
-    if not USERNAME or not PASSWORD:
-        raise ValueError("ERROR: ALTAICLOCKIN_USERNAME and ALTAICLOCKIN_PASSWORD variables must be configured")
-    
     if len(sys.argv) != 2:
         logging.error("Usage: python3 altaiclockin.py <checkin|checkout>")
         sys.exit(1)
@@ -139,6 +135,11 @@ def main():
     action = sys.argv[1].lower()
     if action not in ["checkin", "checkout"]:
         logging.error("Argument must be 'checkin' or 'checkout'")
+        sys.exit(1)
+
+    # Validate that credentials are configured
+    if not USERNAME or not PASSWORD:
+        logging.error("Credentials not configured. Set ALTAICLOCKIN_USERNAME and ALTAICLOCKIN_PASSWORD environment variables")
         sys.exit(1)
 
     logging.info(f"Starting script with action: {action}")

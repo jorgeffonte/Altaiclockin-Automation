@@ -70,10 +70,6 @@ def safe_selenium_operation(operation, operation_name, max_retries=3):
             else:
                 # Different error, re-raise immediately
                 raise
-    
-    # Should not reach here, but just in case
-    if last_exception:
-        raise last_exception
 
 def safe_click_element(driver, element, element_name, max_retries=3):
     """

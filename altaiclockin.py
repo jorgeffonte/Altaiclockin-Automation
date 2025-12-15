@@ -103,10 +103,10 @@ def safe_click_element(driver, element, element_name, max_retries=3):
     Safely click an element with retry logic and fallback to JavaScript click.
     
     This function handles the 'Failed to decode response from marionette' error
-    by implementing:
+    and timeout errors by implementing:
     1. Retry logic with exponential backoff
     2. JavaScript click as fallback
-    3. Better error handling
+    3. Better error handling for various click failures
     
     Args:
         driver: Selenium WebDriver instance
@@ -128,12 +128,21 @@ def safe_click_element(driver, element, element_name, max_retries=3):
             logging.info(f"Successfully clicked {element_name}")
             return
             
-        except (WebDriverException, ElementClickInterceptedException) as e:
+        except Exception as e:
             error_msg = str(e)
+            error_type = type(e).__name__
             
-            # Check if it's the marionette decode error or click intercepted
-            if "Failed to decode response from marionette" in error_msg or "ElementClickInterceptedException" in error_msg:
-                logging.warning(f"Attempt {attempt + 1}/{max_retries} failed for {element_name}: {error_msg[:100]}")
+            # Check if it's a retryable error (marionette, timeout, click intercepted)
+            is_retryable = (
+                "Failed to decode response from marionette" in error_msg or
+                "ElementClickInterceptedException" in error_msg or
+                "TimeoutError" in error_type or
+                "ReadTimeoutError" in error_type or
+                "timed out" in error_msg.lower()
+            )
+            
+            if is_retryable:
+                logging.warning(f"Attempt {attempt + 1}/{max_retries} failed for {element_name} ({error_type}): {error_msg[:100]}")
                 
                 if attempt < max_retries - 1:
                     # Exponential backoff: 0.5s, 1s, 2s
@@ -152,6 +161,7 @@ def safe_click_element(driver, element, element_name, max_retries=3):
                         raise Exception(f"Failed to click {element_name} after all retry attempts") from e
             else:
                 # Different error, re-raise immediately
+                logging.error(f"Non-retryable error during click: {error_type}: {error_msg[:150]}")
                 raise
 
 def main():

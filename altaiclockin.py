@@ -29,6 +29,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException
 
 # --- CONFIGURATION ---
 URL = "https://app.altaiclockin.com/"
@@ -54,6 +55,56 @@ def type_text_humanly(element, text):
     for char in text:
         element.send_keys(char)
         time.sleep(random.uniform(0.05, 0.15))
+
+def close_clause_modal(driver, _wait):
+    """Close the clause/terms modal if it appears after login"""
+    try:
+        # Check if modal background exists and is visible
+        modal_bg = driver.find_element(By.ID, "cpContenidoCentral_mpClausula_backgroundElement")
+        if modal_bg.is_displayed():
+            logging.info("Clause modal detected, attempting to close it...")
+            # Try common close/accept buttons inside the modal
+            possible_buttons = [
+                "cpContenidoCentral_btnAceptarClausula",
+                "cpContenidoCentral_btnCerrarClausula",
+                "cpContenidoCentral_btnOkClausula",
+            ]
+            for btn_id in possible_buttons:
+                try:
+                    btn = driver.find_element(By.ID, btn_id)
+                    if btn.is_displayed():
+                        logging.info(f"Clicking modal button: {btn_id}")
+                        btn.click()
+                        human_sleep(1.0, 2.0)
+                        return True
+                except NoSuchElementException:
+                    continue
+            # Fallback: try to click modal OK via JavaScript
+            try:
+                modal = driver.find_element(By.ID, "cpContenidoCentral_mpClausula")
+                ok_buttons = modal.find_elements(By.XPATH, ".//input[@type='submit' or @type='button'] | .//button | .//a[contains(@class,'btn')]")
+                for btn in ok_buttons:
+                    if btn.is_displayed():
+                        logging.info("Clicking modal OK button via fallback search")
+                        driver.execute_script("arguments[0].click();", btn)
+                        human_sleep(1.0, 2.0)
+                        return True
+            except NoSuchElementException:
+                pass
+            logging.warning("Could not find modal close button")
+    except NoSuchElementException:
+        pass
+    return False
+
+def safe_click_element(driver, element, name="element"):
+    """Click an element, handling intercepts by trying JS click as fallback"""
+    try:
+        element.click()
+        logging.info(f"Clicked {name} (normal)")
+    except ElementClickInterceptedException:
+        logging.warning(f"Normal click intercepted on {name}, trying JavaScript click...")
+        driver.execute_script("arguments[0].click();", element)
+        logging.info(f"Clicked {name} (JavaScript)")
 
 def main():
     if len(sys.argv) != 2:
@@ -110,6 +161,9 @@ def main():
         login_button.click()
         human_sleep(2.0, 4.0)
 
+        # Handle clause modal if present
+        close_clause_modal(driver, wait)
+
         logging.info("Looking for action button")
         if action == "checkin":
             logging.info("Looking for clock-in button")
@@ -119,7 +173,7 @@ def main():
             button = wait.until(EC.element_to_be_clickable((By.ID, "cpContenidoCentral_lnkbtnGeneralFin")))
 
         logging.info("Clicking action button")
-        button.click()
+        safe_click_element(driver, button, f"{action} button")
         human_sleep(2.0, 4.0)
 
         logging.info(f"Action '{action}' completed successfully!")
